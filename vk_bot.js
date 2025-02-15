@@ -1,12 +1,14 @@
 const VkBot = require('node-vk-bot-api');
 const schedule = require("node-schedule");
+require('dotenv').config();
+const express = require('express');
 
-const GROUP_TOKEN = "ВАШ_GROUP_TOKEN";
-const CHAT_ID = "ВАШ_CHAT_ID"; // ID беседы (можно получить через API)
+const CHAT_ID = process.env.GROUP_ID;
+const BOT_TOKEN = process.env.TOKEN;
+const CONFIRMATION_CODE = process.env.CONFIRMATION_CODE;
 
-const bot = new VkBot({
-    token: GROUP_TOKEN,
-});
+const bot = new VkBot(BOT_TOKEN);
+
 const sendPoll = async () => {
     try {
         await bot.execute("messages.send", {
@@ -20,22 +22,43 @@ const sendPoll = async () => {
                     is_anonymous: false,
                 },
             }),
-            random_id: Math.floor(Math.random() * 1000000), // Уникальный ID сообщения
+            random_id: Math.floor(Math.random() * 1000000),
         });
         console.log("Опрос отправлен!");
     } catch (error) {
         console.error("Ошибка при отправке опроса:", error);
     }
 };
-const  rule  =  new  schedule.RecurrenceRule ( );
-rule.dayOfWeek = [1,3,5];
+
+const rule = new schedule.RecurrenceRule();
+rule.dayOfWeek = [0, 1, 3, 5];
 rule.hour = 13;
-rule.minute = 10;
+rule.minute = 53;
 rule.tz = 'Europe/Moscow';
+
 schedule.scheduleJob(rule, () => {
     console.log("Запуск задачи: отправка опроса");
     sendPoll();
 });
+// bot.startPolling((err) => {
+//     if (err) {
+//         console.error(err);
+//     }
+//     console.log("Бот запущен и ожидает событий...");
+// });
 
-bot.startPolling();
-console.log("Бот запущен и ожидает событий...");
+
+const app = express();
+const PORT = process.env.PORT;
+app.use(express.json());
+app.post('/confirm', (req, res) => {
+    const {type,group_id} = req.body
+    if (type === 'confirmation') {
+        console.log(`Подтверждение получено для группы ${group_id}`);
+        return res.send(CONFIRMATION_CODE);
+    }
+    res.sendStatus(200);
+});
+app.listen(PORT, () => {
+    console.log(`HTTP server is running on port ${PORT}`);
+});
