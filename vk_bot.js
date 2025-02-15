@@ -27,8 +27,12 @@ const sendPoll = async () => {
         console.error("Ошибка при отправке опроса:", error);
     }
 };
-
-schedule.scheduleJob("0 13 * * 1,3,5,6", () => {
+const  rule  =  new  schedule.RecurrenceRule ( );
+rule.dayOfWeek = [1,3,5];
+rule.hour = 13;
+rule.minute = 10;
+rule.tz = 'Europe/Moscow';
+schedule.scheduleJob(rule, () => {
     console.log("Запуск задачи: отправка опроса");
     sendPoll();
 });
